@@ -1,0 +1,9 @@
+FROM wangxian/alpine-mysql
+MAINTAINER Jorge Cerpa
+
+ENV MYSQL_ROOT_PASSWORD supersecret
+
+#DELETE FROM mysql.user ;
+#CREATE USER 'root'@'%' IDENTIFIED BY 'supersecret';
+#GRANT ALL ON *.* to 'root'@'%' IDENTIFIED BY 'supersecret' WITH GRANT OPTION;
+#FLUSH PRIVILEGES ;

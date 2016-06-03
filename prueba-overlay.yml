@@ -1,0 +1,29 @@
+version: "2"
+services:
+  web:
+    image: nginx
+    environment:
+      - constraint:node==D-RSC-SWT-DOC02
+    container_name: web
+    networks:
+      uc-net:
+        aliases:
+          - web
+
+  prueba:
+    image: busybox
+    depends_on:
+      - web
+    environment:
+      - constraint:node==D-RSC-SWT-DOC01
+    container_name: prueba
+    command: wget -O- http://web
+    networks:
+      uc-net:
+        aliases:
+          - prueba
+
+networks:
+  uc-net:
+    external:
+      name: uc-net

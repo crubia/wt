@@ -1,0 +1,28 @@
+#creamos y configuramos maquina virtual para key-value store
+	
+	docker-machine create -d virtualbox p10-ks
+	eval "$(docker-machine env p10-ks)"
+	docker run -d --name=consul --restart=always -p "8500:8500" -h "consul" progrium/consul -server -bootstrap
+
+#crear swarm cluster
+	# creamos máquina dentro del cluster como swarm-master
+		
+		docker-machine create -d virtualbox --swarm --swarm-master --swarm-discovery="consul://$(docker-machine ip p10-ks):8500" --engine-opt="cluster-store=consul://$(docker-machine ip p10-ks):8500" --engine-opt="cluster-advertise=eth1:2376" p10-k
+	
+	# creamos otra máquina dentro del cluster
+		
+		docker-machine create -d virtualbox --swarm --swarm-discovery="consul://$(docker-machine ip p10-ks):8500" --engine-opt="cluster-store=consul://$(docker-machine ip p10-ks):8500" --engine-opt="cluster-advertise=eth1:2376" p10-r
+
+#creamos red overlay y bridge
+	eval $(docker-machine env --swarm p10-k)
+	
+	docker network create --driver overlay --internal=true --subnet=192.168.0.0/24 --ip-range=192.168.0.0/24  --gateway=192.168.0.1 uc-net
+	
+	docker network create --driver bridge --subnet=172.69.0.0/24 --ip-range=172.69.0.0/24  --gateway=172.69.0.1 uc-ext
+
+#lanzamos compose
+
+	eval $(docker-machine env --swarm p10-k)
+
+	docker-compose build
+	docker-compose up

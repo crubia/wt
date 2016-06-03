@@ -1,0 +1,145 @@
+version: "2"
+services:
+  kamailio:
+    #build: ./kamailio
+    image: wtelecom/kamailio:uc-1
+    depends_on:
+      - db
+      - rtpproxy01
+      - rtpproxy02
+      - asterisk
+      - mcu
+      - mediamixer
+    environment:
+      - constraint:node==D-RSC-SWT-DOC01
+      - PUBLICIP=10.128.19.60
+    volumes:
+      - /home/tech/uc/kamailio:/etc/kamailio
+    ports:
+      - "5060:5060/udp"
+      - "5061:5061/udp"
+    hostname: kamailio-h
+    extra_hosts:
+      - "public_ip:10.128.19.60"
+    container_name: kamailio-c
+    networks:
+      uc-net:
+        aliases:
+          - kamailio-int
+      uc-ext:
+        aliases:
+          - kamailio-ext
+
+  db:
+    #build: ./mysql
+    image: wtelecom/mysql:uc-1
+    environment:
+      - constraint:node==D-RSC-SWT-DOC01
+      - MYSQL_ROOT_PASSWORD=supersecret
+    volumes:
+      - /home/tech/uc/mysql/dataDir:/var/lib/mysql
+    hostname: db
+    container_name: db
+    networks:
+      uc-net:
+        aliases:
+          - db
+  
+  rtpproxy01:
+    #build: ./rtpproxy
+    image: wtelecom/rtpproxy:uc-1
+    environment:
+      - constraint:node==D-RSC-SWT-DOC01
+      - RTPPROXY_OPTS=-A rtpproxy01-ext/rtpproxy01-int -F -f -l public_ip/rtpproxy01-int -m 10000 -M 10399 -s udp:*:7711 -d DBUG:LOG_LOCAL0
+    ports:
+      - "10000-10399:10000-10399/udp"
+    expose:
+      - "7711"
+    hostname: rtpproxy01-h
+    container_name: rtpproxy01
+    extra_hosts:
+      - "public_ip:10.128.19.60"
+    networks:
+      uc-ext:
+        aliases:
+          - rtpproxy01-ext
+      uc-net:
+        aliases:
+          - rtpproxy01-int
+
+  rtpproxy02:
+    #build: ./rtpproxy
+    image: wtelecom/rtpproxy:uc-1
+    restart: always
+    environment:
+      - constraint:node==D-RSC-SWT-DOC02
+      - RTPPROXY_OPTS=-A rtpproxy02-ext/rtpproxy02-int -F -f -l public_ip/rtpproxy02-int -m 10400 -M 10799 -s udp:*:7722 -d DBUG:LOG_LOCAL0
+    ports:
+      - "10400-10799:10400-10799/udp"
+    expose:
+      - "7722"
+    extra_hosts:
+      - "public_ip:10.128.19.61"
+    hostname: rtpproxy02-h
+    container_name: rtpproxy02
+    networks:
+      uc-ext2:
+        aliases:
+          - rtproxy02-ext
+      uc-net:
+        aliases:
+          - rtpproxy02-int
+
+  asterisk:
+    #build: ./asterisk
+    image: wtelecom/asterisk:uc-1
+    environment:
+      - constraint:node==D-RSC-SWT-DOC01
+    volumes:
+      - /home/tech/uc/asterisk:/etc/asterisk
+    hostname: asterisk
+    networks:
+      - uc-net
+
+  mcu:
+    #build: ./mcu
+    image: wtelecom/medooze-mcu:uc-1
+    depends_on:
+      - mediamixer
+    environment:
+      - constraint:node==D-RSC-SWT-DOC02
+    ports:
+      - "4848:4848"
+      - "8080:8080"
+      - "8181:8181"
+    hostname: mcu
+    container_name: mcu
+    networks:
+      uc-ext2:
+        aliases:
+          - mcu-ext
+      uc-net:
+        aliases:
+          - mcu-int
+        
+  mediamixer:
+    #build: ./mediamixer
+    image: wtelecom/medooze-mediamixer:uc-1
+    environment:
+      - constraint:node==D-RSC-SWT-DOC02
+    # volumes:
+    #   - /home/tech/uc/mediamixer:/usr/local/src/medooze/mcu
+    hostname: mediamixer
+    networks:
+      - uc-net    
+
+networks:
+  uc-net:
+    external:
+      name: uc-net
+  uc-ext:
+    external:
+      name: D-RSC-SWT-DOC01/uc-ext
+  uc-ext2:
+    external:
+      name: D-RSC-SWT-DOC02/uc-ext2

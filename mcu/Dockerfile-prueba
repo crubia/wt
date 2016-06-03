@@ -1,0 +1,11 @@
+FROM alpine
+MAINTAINER Jorge Cerpa
+
+WORKDIR /usr/local
+ENV JAVA_HOME /usr/java/jre1.8.0_91
+
+ADD jre-8u91-linux-x64.tar.gz /usr/java/
+
+ADD ./mcuWeb.sh /etc/init.d/mcuWeb.sh
+
+CMD top

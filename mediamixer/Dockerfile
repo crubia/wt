@@ -1,0 +1,33 @@
+FROM centos:latest
+MAINTAINER Jorge Cerpa
+
+COPY install /
+
+#COPY config.mk /usr/local/src/medooze/mcu/config.mk
+
+COPY ld.so.conf /etc/ld.so.conf
+
+COPY mcu /usr/local/src/medooze/mcu/
+
+COPY mediamixer /mediamixer
+
+RUN chmod +x /install-*.sh \
+	&& sh -x /install-rpm.sh \
+	&& sh -x /install-yasm.sh \
+	&& sh -x /install-X264.sh \
+	&& sh -x /install-FFMPEG.sh \
+	&& sh -x /install-xmlrpc.sh \
+	&& sh -x /install-mp4v2.sh \
+	&& sh -x /install-libvpx.sh \
+	&& sh -x /install-Speex.sh \
+	&& sh -x /install-Opus.sh \
+	&& sh -x /install-libsrtp.sh \
+	&& sh -x /install-depot_tools.sh \
+	&& ldconfig \
+	&& chmod 777 /mediamixer \
+	&& chmod +x /usr/local/src/medooze/mcu/bin/release/mcu
+
+WORKDIR /
+ENTRYPOINT ["/mediamixer"]
+
+CMD ["start"]

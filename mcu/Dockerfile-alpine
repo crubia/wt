@@ -1,0 +1,32 @@
+FROM alpine
+MAINTAINER Jorge Cerpa
+
+WORKDIR /usr/local
+ENV JAVA_HOME /usr/java/jre1.8.0_91
+
+ADD jre-8u91-linux-x64.tar.gz /usr/java/
+
+ADD ./mcuWeb.sh /etc/init.d/mcuWeb.sh
+
+RUN apk add --update openjdk8 wget && rm -rf /var/cache/apk/* \
+	&&	wget --no-check-certificate http://sourceforge.net/projects/mcumediaserver/files/mcumediaserver/rev%201317/mcuWeb.sar/download \
+	&&	mv download mcuWeb.war \
+	&&  wget http://download.java.net/javaee5/sailfin/v2_branch/promoted/Linux/sailfin-installer-v2-b31g-linux.jar \
+	&&  echo 'java -Xmx256m -jar sailfin-installer-v2-b31g-linux.jar <<!' > instalaSalfin.sh \
+	&&  echo A >> instalaSalfin.sh \
+	&&  echo ! >> instalaSalfin.sh \
+	&&  sh instalaSalfin.sh \
+	&&  cd /usr/local/sailfin \
+	&&  chmod -R +x /usr/local/sailfin/lib/ant/bin \
+	&&  /usr/local/sailfin/lib/ant/bin/ant -f /usr/local/sailfin/setup.xml  \
+	&&  mv /usr/local/mcuWeb.war /usr/local/sailfin/domains/domain1/autodeploy \
+	&&  chmod 777 /etc/init.d/mcuWeb.sh \
+	&&  rm sailfin-installer-v2-b31g-linux.jar
+
+EXPOSE 80 8181 4848 3700 3820 3920 8686 5070 5071
+
+CMD  /etc/init.d/mcuWeb.sh start && tail -f /usr/local/sailfin/domains/domain1/logs/server.log
+
+
+
+#http://download.oracle.com/otn/java/jdk/6u45-b06/jdk-6u45-linux-x64.bin
